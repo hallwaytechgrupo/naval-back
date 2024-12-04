@@ -33,6 +33,12 @@ io.on('connection', (socket) => {
     const { playerId, inicio, comprimento, direcao } = data;
     const todosPosicionadosJogador = game.getTodosDoJogadorPosicionados(playerId);
     
+    if (game.verificarTodosNaviosPosicionados()) {
+      console.log("Verificar todos navios posicionados")
+      socket.emit('navioPosicionado', { sucesso: false, mensagem: 'Todos os navios já foram posicionados.' });
+      return;
+    }
+
     // Cria um memento se a fase for Posicionamento
     if (game.getFase() === Fase.Posicionamento) {
       memento = game.criarMemento();
@@ -51,7 +57,7 @@ io.on('connection', (socket) => {
 
     console.log('Posicionar navio', playerId, inicio, comprimento, direcao);
     const resultado = game.posicionarNavio(playerId, inicio as Coordenada, comprimento, direcao as Direcao);
-    console.log('Resultado', JSON.stringify(resultado, null, 2));
+    console.log('Resultado');
     socket.emit('navioPosicionado', resultado);
 
     if (game.getFase() === Fase.Ataque) {
@@ -60,6 +66,8 @@ io.on('connection', (socket) => {
       }
       io.emit('faseAlterada', { fase: game.getFase() });
       io.emit('turnoAlterado', { turnoAtual: game.getTurnoAtual() });
+      
+      memento = game.criarMemento();
     } else if (game.getFase() === Fase.Fim) {
       memento = null;
     }
@@ -72,24 +80,15 @@ io.on('connection', (socket) => {
     console.log('vez de quem', game.getTurnoAtual());
 
     if (game.getTurnoAtual() !== playerId) {
+      console.log("não é a sua vez de atacar...")
       socket.emit('erro', { mensagem: 'Não é o seu turno de atacar.' });
       return;
-    }
-
-    if (game.getFase() === Fase.Ataque) {
-      memento = game.criarMemento();
     }
 
     console.log('Atacar', playerId, coordenada);
     const resultado = game.ataque(playerId, coordenada as Coordenada);
     console.log('Resultado', resultado);
     socket.emit('ataqueResultado', resultado);
-
-    if (game.getFase() === Fase.Fim) {
-      game.reiniciar(10);
-      memento = null;
-      io.emit('fimDeJogo', { fase: game.getFase(), vencedor: playerId });
-    }
 
     const adversarioId = playerId === 1 ? 0 : 1;
     const tabuleiro = game.getGrade(adversarioId);
@@ -108,6 +107,16 @@ io.on('connection', (socket) => {
 
     const pontuacao = game.getPontuacao();
     socket.emit('pontuacao', pontuacao);
+
+    if (game.getFase() === Fase.Ataque) {
+      memento = game.criarMemento();
+    }
+
+    if (game.getFase() === Fase.Fim) {
+      game.reiniciar(10);
+      memento = null;
+      io.emit('fimDeJogo', { fase: game.getFase(), vencedor: playerId });
+    }
   });
 
   socket.on('getTabuleiro', (playerId) => {

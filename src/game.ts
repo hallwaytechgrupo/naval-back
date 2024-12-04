@@ -138,15 +138,17 @@ export class Game {
     this.fase = Fase.Posicionamento;
     this.naviosPosicionados = [0, 0];
     this.turnoAtual = 0;
+    this.comprimentosUsados = [new Set(), new Set()];
   }
 
-  private verificarTodosNaviosPosicionados(): void {
+  public verificarTodosNaviosPosicionados(): boolean {
     for (let i = 0; i < this.naviosPosicionados.length; i++) {
       if (this.naviosPosicionados[i] < this.totalNavios) {
-        return;
+        return false;
       }
     }
     this.fase = Fase.Ataque;
+    return true;
   }
 
   public getTodosDoJogadorPosicionados(jogadorId: number): boolean {
@@ -171,6 +173,7 @@ export class Game {
     };
   } {
     if (this.fase !== Fase.Posicionamento) {
+      this.fase = Fase.Ataque;
       return {
         sucesso: false,
         mensagem: 'Não estamos na fase de posicionamento.',
@@ -178,6 +181,7 @@ export class Game {
     }
 
     if (this.naviosPosicionados[jogador] >= this.totalNavios) {
+      this.fase = Fase.Ataque;
       return {
         sucesso: false,
         mensagem: 'Todos os seus navios já foram posicionados.',
