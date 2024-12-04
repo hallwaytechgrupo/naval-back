@@ -27,15 +27,18 @@ io.on('connection', (socket) => {
   //   console.log("memento teste")
   //   socket.emit('estadoAtual', memento);
   // }
+  
 
   socket.on('posicionarNavio', (data) => {
     const { playerId, inicio, comprimento, direcao } = data;
     const todosPosicionadosJogador = game.getTodosDoJogadorPosicionados(playerId);
     
-    memento = game.criarMemento();
+    // Cria um memento se a fase for Posicionamento
+    if (game.getFase() === Fase.Posicionamento) {
+      memento = game.criarMemento();
+    }
 
     if (todosPosicionadosJogador) {
-      console.log('passou no if');
       socket.emit('navioPosicionado', { sucesso: false, mensagem: 'Todos os seus navios já foram posicionados.' });
       game.alternarTurno();
       io.emit('turnoAlterado', { turnoAtual: game.getTurnoAtual() });
@@ -57,6 +60,8 @@ io.on('connection', (socket) => {
       }
       io.emit('faseAlterada', { fase: game.getFase() });
       io.emit('turnoAlterado', { turnoAtual: game.getTurnoAtual() });
+    } else if (game.getFase() === Fase.Fim) {
+      memento = null;
     }
   });
 
@@ -71,6 +76,10 @@ io.on('connection', (socket) => {
       return;
     }
 
+    if (game.getFase() === Fase.Ataque) {
+      memento = game.criarMemento();
+    }
+
     console.log('Atacar', playerId, coordenada);
     const resultado = game.ataque(playerId, coordenada as Coordenada);
     console.log('Resultado', resultado);
@@ -78,6 +87,7 @@ io.on('connection', (socket) => {
 
     if (game.getFase() === Fase.Fim) {
       game.reiniciar(10);
+      memento = null;
       io.emit('fimDeJogo', { fase: game.getFase(), vencedor: playerId });
     }
 
@@ -112,6 +122,24 @@ io.on('connection', (socket) => {
   socket.on('getFase', () => {
     const fase = game.getFase();
     socket.emit('fase', { fase });
+  });
+
+  socket.on('restaurarEstado', () => {
+    if (memento) {
+      game.restaurarMemento(memento);
+      console.log('Estado do jogo restaurado a partir do memento');
+      socket.emit('estadoRestaurado', { sucesso: true, estado: memento.getState() });
+    } else {
+      socket.emit('estadoRestaurado', { sucesso: false, mensagem: 'Nenhum estado salvo encontrado' });
+    }
+  });
+
+  socket.on('solicitarEstado', () => {
+    if (memento) {
+      socket.emit('estadoAtual', { sucesso: true, estado: memento.getState() });
+    } else {
+      socket.emit('estadoAtual', { sucesso: false, mensagem: 'Nenhum estado salvo encontrado' });
+    }
   });
 
   socket.on('disconnect', () => {

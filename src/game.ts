@@ -18,6 +18,7 @@ export class Game {
   private naviosPosicionados: number[];
   private totalNavios: number;
   private turnoAtual: number;
+  private comprimentosUsados: Set<number>[];
 
   constructor(tamanho: number, totalNavios: number) {
     this.tabuleiros = [
@@ -34,6 +35,7 @@ export class Game {
     this.naviosPosicionados = [0, 0];
     this.totalNavios = totalNavios;
     this.turnoAtual = 0;
+    this.comprimentosUsados = [new Set(), new Set()];
   }
 
   public criarMemento(): Memento {
@@ -43,6 +45,7 @@ export class Game {
       naviosPosicionados: this.naviosPosicionados,
       totalNavios: this.totalNavios,
       turnoAtual: this.turnoAtual,
+      pontuacao: this.getPontuacao(),
     };
     return new Memento(estado);
   }
@@ -181,6 +184,13 @@ export class Game {
       };
     }
 
+    if (this.comprimentosUsados[jogador].has(comprimento)) {
+      return {
+        sucesso: false,
+        mensagem: 'Você já posicionou um navio com este comprimento.',
+      };
+    }
+
     const resultado = this.tabuleiros[jogador].dePosicionamento.posicionarNavio(inicio, comprimento, direcao);
 
     if (jogador !== 0 && jogador !== 1) {
@@ -189,6 +199,7 @@ export class Game {
 
     if (resultado.sucesso) {
       this.naviosPosicionados[jogador]++;
+      this.comprimentosUsados[jogador].add(comprimento);
       this.verificarTodosNaviosPosicionados();
     }
 
