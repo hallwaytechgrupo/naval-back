@@ -113,4 +113,8 @@ export class TabuleiroPosicionamento extends Board {
     this.grade[coordenada.y][coordenada.x] = 'O';
     return false;
   }
+
+  public todasPosicoesAtingidas(): boolean {
+    return this.posicoesAtingidas === this.posicoesTotais;
+  }
 }

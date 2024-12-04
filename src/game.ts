@@ -258,17 +258,6 @@ export class Game {
       };
     }
 
-    if (naviosRestantes === 0) {
-      this.fase = Fase.Fim;
-      return {
-        sucesso: true,
-        acerto,
-        coordenada,
-        mensagem: `Jogador ${jogador === 1 ? 1 : 0} venceu!`,
-        tabuleiro: this.getGrade(jogador),
-      };
-    }
-
     return {
       sucesso: acerto,
       acerto,
